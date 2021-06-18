@@ -1,0 +1,39 @@
+#######################################
+# Syntax Coloring Map For Jitbus Library
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+
+jitbus	KEYWORD1
+SerialJitbus	KEYWORD1
+JitPacket	KEYWORD1
+data	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+
+begin		KEYWORD2
+waitForSerial	KEYWORD2
+add		KEYWORD2
+createPacket	KEYWORD2
+sendPacket	KEYWORD2
+receivePacket	KEYWORD2
+waitSerialUSB	KEYWORD2
+print_debug	KEYWORD2
+print_info	KEYWORD2
+print_warn	KEYWORD2
+print_error	KEYWORD2
+print_fatal_error	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+
+
+
+#######################################
