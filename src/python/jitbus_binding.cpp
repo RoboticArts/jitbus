@@ -1,3 +1,5 @@
+#ifdef __linux__
+
 #include <boost/python.hpp>
 #include "../core/jitcore.h"
 
@@ -36,3 +38,5 @@ BOOST_PYTHON_MODULE(_jitbus_binding_so)
 	.def("sendPacket", &JitbusBinding::sendPacketPy)
     ;
 }
+
+#endif
