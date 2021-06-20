@@ -5,7 +5,13 @@
 #include "jitpacket.h"
 #include "jitlog.h"
 
-#define JITBUS_BUFFER_SIZE 100
+#ifndef JITBUS_BUFFER_SIZE
+  #define JITBUS_BUFFER_SIZE 100
+#endif
+
+#ifndef JITBUS_MIN_BUFFER_SPACE
+  #define JITBUS_MIN_BUFFER_SPACE 10
+#endif
 
 class Jitcore: public Jitlog{ 
   
@@ -38,21 +44,28 @@ class Jitcore: public Jitlog{
         read(cbuffer, cbuffer->free_size());
         //read(cbuffer, 200);
 
-        JitPacket jitpacket;
+        if (cbuffer->size() > JITBUS_MIN_BUFFER_SPACE){
 
-        if (jitpacket.findPacket(cbuffer) == true){
-          
-          packet_available = true;      
-          packet_length = jitpacket.packetLength();
-          packet_id = jitpacket.packetId();
+          JitPacket jitpacket;
+
+          if (jitpacket.findPacket(cbuffer) == true){
+
+            packet_available = true;
+            packet_length = jitpacket.packetLength();
+            packet_id = jitpacket.packetId();
+          }
+
+          else{
+
+            packet_available = false;
+            packet_length = 0;
+            packet_id = 0;
+
+          }
         }
 
         else{
-
-          packet_available = false;      
-          packet_length = 0;
-          packet_id = 0;
-
+          packet_available = false;
         }
 
         return packet_available;
