@@ -192,6 +192,7 @@ class JitPacket{
             else{
                 found = false;
                 cbuffer->pop();
+                //printf("start frame failed\n");
             }
 
             return found;
@@ -207,14 +208,14 @@ class JitPacket{
             total_length = total_length | cbuffer->index(2 + 2) << 8;    
             total_length = total_length | cbuffer->index(2 + 3) << 0; 
 
-            if (total_length <= cbuffer->size() || total_length > PROTOCOL_HEADER_LENGTH + PROTOCOL_TAIL_LENGTH){
-
+            if (total_length <= cbuffer->free_size() && total_length > PROTOCOL_HEADER_LENGTH + PROTOCOL_TAIL_LENGTH){
                 found = true;
                 this->total_length = total_length;
             }
             else{
                 found = false;
                 cbuffer->pop();
+                printf("length frame failed\n");
             }
 
             return found;
@@ -235,6 +236,7 @@ class JitPacket{
             else{
                 found = false;
                 cbuffer->pop();
+                printf("end frame failed\n");
             }
 
             return found;
@@ -254,14 +256,15 @@ class JitPacket{
                 found = true;
                 this->id = this->id | cbuffer->index(6) << 8;
                 this->id = this->id | cbuffer->index(7) << 0;
-
+                //printf("frame OK\n");
             }
             else{
                 found = false;
                 cbuffer->pop();
+                //printf("crc frame failed\n");
             }
             
-            found = true; //  DELETEMEE! <------------------------------------------------------
+            found = true; //  Remove when CRC is implemented! <------------------------------------------------------
             return found;
 
         }
