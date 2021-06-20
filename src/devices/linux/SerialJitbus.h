@@ -126,12 +126,8 @@ class SerialJitbus: public Jitcore {
 		if (connected()){
 
 			try{
-				//uint8_t x[19]= {1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
-				//int a = serial.write(x, 20);
-				size_t a = serial.write(buffer, bytes_to_write);
-				//std::string msg = "si o que";
-				//size_t a = serial.write(msg);
-				//printf("bytes written: %zu\n", a);
+
+				serial.write(buffer, bytes_to_write);
 			}
 
 			catch(serial::IOException& e){
