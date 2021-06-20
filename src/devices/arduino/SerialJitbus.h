@@ -48,27 +48,33 @@ class SerialJitbus: public Jitcore {
 
     void write(uint8_t* buffer, int bytes_to_write){
     
-        for(int i = 0; i<bytes_to_write; i++){ 
-            serial->write(buffer[i]);
-        }
+        if (Serial){
 
+            for(int i = 0; i<bytes_to_write; i++){
+                serial->write(buffer[i]);
+
+            }
+        }
     }
 
 
     void read(CircularBuffer<uint8_t>* cbuffer, int bytes_to_read){
-        
 
-        for (int i = 0; i<bytes_to_read; i++){
+        if (Serial){
 
-            if (serial->available() > 0){
-                
-                cbuffer->push(serial->read());
-                
+            for (int i = 0; i<bytes_to_read; i++){
+
+                if (serial->available() > 0){
+
+                    cbuffer->push(serial->read());
+
+                }
+                else{
+                    break;
+                }
             }
-            else{
-                break;
-            }
-        } 
+
+        }
 
        /*
         uint32_t pending_bytes = serial->available();
