@@ -3,6 +3,7 @@
 
 #define JITLOG_SIZE 1000
 
+#include <chrono>
 #include <time.h>
 #include "serial/serial.h"
 #include "core/jitcore.h"
@@ -13,12 +14,13 @@ class SerialJitbus: public Jitcore {
 	
     SerialJitbus(){
 
+		cbuffer = new CircularBuffer<uint8_t>(JITBUS_BUFFER_SIZE);
 		enable_color = true;
 		time(&last_time);
 		time(&current_time);
 		last_state = CONNECTED;
 		current_state = DISCONNECTED;
-
+		set_print_level(Jitlog::INFO);
     }
 
     ~SerialJitbus(){
@@ -121,79 +123,109 @@ class SerialJitbus: public Jitcore {
 
     }
 
-    void write(uint8_t* buffer, int bytes_to_write){
+    bool write(uint8_t data){
+
+		bool success = false;
 
 		if (connected()){
 
 			try{
 
-				serial.write(buffer, bytes_to_write);
-			}
-
-			catch(serial::IOException& e){
-		
-				print_error("jitbus::write -> %s",e.what());
-				switchState(DISCONNECTED);
-			}
-			catch(serial::PortNotOpenedException& e){
-				print_error("jitbus::write -> %s",e.what());
-				switchState(DISCONNECTED);
-			}
-			catch (serial::SerialException& e){
-				print_error("jitbus::write -> %s",e.what());
-				switchState(DISCONNECTED);
-			}
-
-		} 
-
-    }
-
-    void read(CircularBuffer<uint8_t>* cbuffer,  int bytes_to_read){
-
-		if (connected()){
-
-			try{
+				size_t bytes_written = serial.write(&data,1);
 				
-				std::string incoming_bytes;
-				size_t available_bytes = serial.available();
-			
-//printf("%zu\n", serial.available());
-
-				if (available_bytes > 0){
-					
-					if (bytes_to_read > available_bytes){
-					
-						bytes_to_read = available_bytes;
-					}
-
-
-					incoming_bytes = serial.read(bytes_to_read);
-					
-					for (int i = 0; i<incoming_bytes.length(); i++){
-						
-						cbuffer->push(incoming_bytes[i]);
-					}
-
-				} 
+				if (bytes_written <= 0){
+					success = false;
+					print_warn("jitbus::write -> Byte hex: %X not sent, I will try again", data);
+				}
+				else{
+					success = true;
+				}
 			}
 
 			catch(serial::IOException& e){
 		
-				print_error("jitbus::read -> %s",e.what());
+				print_error("jitbus::write -> %s",e.what());
 				switchState(DISCONNECTED);
 			}
 			catch(serial::PortNotOpenedException& e){
-				print_error("jitbus::read -> %s",e.what());
+				print_error("jitbus::write -> %s",e.what());
 				switchState(DISCONNECTED);
 			}
 			catch (serial::SerialException& e){
-				print_error("jitbus::read -> %s",e.what());
+				print_error("jitbus::write -> %s",e.what());
 				switchState(DISCONNECTED);
 			}
 
 		}
-    
+
+		return success; 
+
+    }
+
+    uint32_t available_write(){
+		
+		uint32_t virtual_serial_size = 64;
+
+        return virtual_serial_size;
+    }
+
+	uint32_t available_read(){
+
+        if (serial.available() >= 63){ // 64 bytes buffer
+            
+            print_warn("SerialJitbus::available_bytes -> Serial RX buffer is full, "
+                        "execution frequency is too low or sender is too fast. Next "
+                        "bytes could be lost");
+            
+        }
+
+        if (cbuffer->size() >= JITBUS_BUFFER_SIZE){ 
+            
+            print_warn("SerialJitbus::available_bytes -> Serial RX circular buffer is "
+                       "full, execution frequency is toolow or sender is too fast. Next "
+                       "bytes could be lost");
+            
+        }
+        
+        while(serial.available() > 0){
+
+        	if (connected()){
+
+				try{
+
+					cbuffer->push(serial.read().c_str()[0]);
+					
+				}
+
+				catch(serial::IOException& e){
+			
+					print_error("jitbus::read -> %s",e.what());
+					switchState(DISCONNECTED);
+				}
+				catch(serial::PortNotOpenedException& e){
+					print_error("jitbus::read -> %s",e.what());
+					switchState(DISCONNECTED);
+				}
+				catch (serial::SerialException& e){
+					print_error("jitbus::read -> %s",e.what());
+					switchState(DISCONNECTED);
+				}
+
+			}
+        }
+
+        uint32_t available_data = cbuffer->size(); 
+        
+        return available_data;
+
 	}
+
+
+	uint8_t read(){
+
+        return cbuffer->pop();
+    }
+
 
 	void print_log(const char* message){
 
@@ -201,7 +233,17 @@ class SerialJitbus: public Jitcore {
 
 	}
 
+    uint32_t time_ms(){
+
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+		uint32_t time_now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
+
+		return time_now_ms;
+    }
+
   private:
+
+	CircularBuffer<uint8_t>* cbuffer;
 
 	enum state_enum {CONNECTED, DISCONNECTED}; 
 	int current_state;
@@ -215,6 +257,8 @@ class SerialJitbus: public Jitcore {
 	int reconnection_time;
 
 	time_t current_time, last_time;
+
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
 	void switchState(int state){
 
