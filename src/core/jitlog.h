@@ -4,7 +4,7 @@
 #include <stdarg.h>
 
 #ifndef JITLOG_SIZE
-    #define JITLOG_SIZE 100
+    #define JITLOG_SIZE 200
 #endif
 
 class Jitlog { 
@@ -12,6 +12,7 @@ class Jitlog {
   public:
 
     bool enable_color;
+    enum level {FATAL_ERROR, ERROR, WARN, INFO, DEBUG};
 
     Jitlog(){}
 
@@ -19,6 +20,10 @@ class Jitlog {
 
     #ifndef JITBUS_DISABLE_LOG
 
+        void set_print_level(int level){
+
+            _print_level = level;
+        }
 
         virtual void print_log(const char* message){
 
@@ -86,20 +91,22 @@ class Jitlog {
     #endif
 
   private:
+    
+    int _print_level = DEBUG;
 
     #ifndef JITBUS_DISABLE_LOG
 
-        enum level {DEBUG, INFO, WARN, ERROR, FATAL_ERROR};
-
         void print_message(int level, const char* format, va_list args){
 
-            char message[JITLOG_SIZE];
-            vsprintf(message, format, args);
-            color_message(level);
-            print_log(message);
-            print_log("\r\n");
-            color_message(-1);
+            if (level <= _print_level){
 
+                char message[JITLOG_SIZE];
+                vsprintf(message, format, args);
+                color_message(level);
+                print_log(message);
+                print_log("\r\n");
+                color_message(-1);
+            }
         }
 
 
@@ -118,43 +125,24 @@ class Jitlog {
                 }
             }
 
+            else{
+
+                switch(level){
+                    
+                    case DEBUG: print_log("DEBUG: "); break;
+                    case INFO: print_log("INFO: "); break;
+                    case WARN: print_log("WARN: "); break;
+                    case ERROR: print_log("ERROR: "); break;
+                    case FATAL_ERROR: print_log("FATAL_ERROR: "); break;
+                    default: print_log(""); break;
+                }
+
+            }
+
         }
 
     #endif
 
-
-/*
-	void print_error(const char *format, ...) {
-  		
-		printf("\033[1;31mERROR: ");
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
-		printf("\033[0m");
-	}
-
-	void print_warn(const char *format, ...) {
-
-		printf("\033[1;33mWARN: ");
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
-		printf("\033[0m");
-	}
-
-	void print_info(const char *format, ...) {
-
-  		printf("\033[0mINFO: ");
-		va_list args;
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
-		printf("\033[0m");
-		  
-	}
-*/
     
 
 };
