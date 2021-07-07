@@ -87,6 +87,7 @@ class Jitlog {
         void print_warn(const char *format, ...){}
         void print_error(const char *format, ...){}
         void print_fatal_error(const char *format, ...){}
+        void set_print_level(int level){}
     
     #endif
 
