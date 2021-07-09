@@ -139,7 +139,9 @@ class JitStream: public JitPacket{
     // ------------------------------------------------------------------------------- // 
 
     template<typename Type>
-    void writePacket(const Type& data, uint16_t data_id){
+    bool writePacket(const Type& data, uint16_t data_id){
+
+        bool ready = false;
 
         do{
 
@@ -216,15 +218,24 @@ class JitStream: public JitPacket{
         } while (state_write != WR_WAIT_AVAILABLE_BYTES && state_write != WR_NEW_PACKET &&
                  state_write != WR_SEND_START_FRAME && state_write != WR_SEND_END_FRAME);  // Remove <--------------
 
+        if (state_write == WR_NEW_PACKET){
+
+            ready = true;
+        }
+
+        return ready;
     }
 
 
     template<typename Type>
     void writePacketHz(const Type& data, uint16_t data_id, uint32_t& time, float frequency){
 
-        if (time_ms() - time > 1000/frequency){
-            time = time_ms();
-            writePacket(data, data_id);
+        if (time_ms() - time >= 1000/frequency){
+            
+            if (writePacket(data, data_id) == true){
+                time = time_ms();
+            }
+           
         }
     }
 
@@ -300,7 +311,7 @@ class JitStream: public JitPacket{
             }
 
             else{
-                print_warn("jitcore::findStart -> Start frame not found in this byte  dec: %d  hex: %X, needed %d", read_byte, read_byte, JitPacket::startFrame());
+                print_warn("jitcore::findStart -> Start frame not found in this byte  dec: %d  hex: %X char %c, needed %d", read_byte, read_byte, read_byte, JitPacket::startFrame());
 
                 /*
                 if (attempts == JITBUS_BUFFER_SIZE/2){
