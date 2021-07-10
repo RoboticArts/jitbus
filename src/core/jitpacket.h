@@ -2,11 +2,11 @@
 #define JITPACKET_H
 
 /*
-*   ||___________________HEADER___________________||_____DATA____||__________TAIL_________||
-*   || START FRAME | TOTAL LENGTH | PACKET INDEX  || PACKET DATA ||   CRC     | END FRAME ||
-*   ||   uint16_t  |   uint32_t   |   uint16_t    ||   uint8_t*  || uint16_t  |  uint16_t ||       
-*   ||    0xFFFF   |     ---      |     ---       ||     ---     ||   ---     |   0xFE7F  ||
-*/    
+*   ||____HEADER___||______________DATA____________||__________TAIL_________||
+*   || START FRAME || PACKET INDEX  | PACKET DATA  ||   CRC     | END FRAME ||
+*   ||   uint8_t   ||   uint16_t    |   uint8_t*   || uint16_t  |  uint8_t  ||       
+*   ||    0xAF     ||     ---       |     ---      ||   ---     |   0xFE    ||
+*/     
 
 #define PROTOCOL_START_FRAME 0xAF
 #define PROTOCOL_END_FRAME 0xFE
