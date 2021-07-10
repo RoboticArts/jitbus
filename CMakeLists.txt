@@ -36,17 +36,3 @@ install(
   DIRECTORY src/core/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
-
-
-# # Add jitbus library and ros example
-# add_library(${PROJECT_NAME}
-#   #src/jitbus.h
-#   examples/linux/ros/ros_jitbus_example.cpp
-# )
-
-# # Compile example
-# add_dependencies(jitbus ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_executable(ros_jitbus_example examples/linux/ros/ros_jitbus_example.cpp)
-# add_dependencies(ros_jitbus_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# target_link_libraries(jitbus ${catkin_LIBRARIES})
-# target_link_libraries(ros_jitbus_example ${catkin_LIBRARIES} jitbus)
