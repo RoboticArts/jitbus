@@ -1,6 +1,23 @@
 #ifndef JITSTREAM_H
 #define JITSTREAM_H
 
+// all: Review all debug, info, warn and print messages
+// all: check variable sizes
+// crc: CRC CCIT_ZERO
+// cobs: Remove auxiliar buffer for cobs, package will be built with enough spaces, add start and end frame. Keep length warning
+// jitstream: Fix attempts when start data is not received after X attempts
+// jitstream: add bool inside the write function to know if data is sent
+// jitstream: improve bool inside the read function, rename types
+// jitstream: test and update sendPacketBlocking
+// jitstream: Add clear packet function when packet is not consumed, it will cause packet block
+// jitstream: increase precision time to publish to more than 500 hz. Add overflow counter
+// linux/SerialJitbus: add virtual time function to be overloaded on ros programs
+// SerialJitbus: Add set_print_level out of the jitbus library
+// SerialJitbus: 
+// arduino/SerialJitbus: remove writeAvailable because is not available in all devices. Intead of it, use return of write
+// arduino/SerialJitbus: check how to manage Stream->Serial and disable write and read functions when port is closed
+// arduino/SerialJitbus: check if circular buffer can be removed. Check programs with low loop frequency
+// raspberry/SerialJitbus: check if serial library is compatible with native serial on raspberry pi, or find a library
 
 class JitStream: public JitPacket{ 
 
@@ -487,7 +504,7 @@ class JitStream: public JitPacket{
         }
         else{
             is_packet_written = false;
-            print_debug("jitcore::sendPacket -> Buffer TX full because there is %d avaiable bytes for write", available_write_bytes);
+            print_debug("jitcore::sendPacket -> Buffer TX full because there is %d available bytes for write", available_write_bytes);
             print_debug("X Waiting for available %d write bytes", buffer_write_size - ((index_written-1) + 1) );
         }
 
