@@ -25,7 +25,7 @@ include_directories(
 	)
 
 # Bind Python 
-add_library(_jitbus_binding_so src/python/jitbus_binding.cpp)
+add_library(_jitbus_binding_so src/python/jitbus/jitbus_binding.cpp)
 target_link_libraries(_jitbus_binding_so ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 set_target_properties(_jitbus_binding_so PROPERTIES
 	PREFIX ""

@@ -27,7 +27,7 @@ class JitPacket: public JitInterface {
         uint32_t buildPacket(uint8_t* buffer, const Type& data, uint16_t data_id){
             
             uint32_t cobs_length;
-            uint32_t data_length = sizeof(Type);
+            uint32_t data_length = setLength(sizeof(Type));
             uint32_t packet_length = PROTOCOL_DATA_ID_LENGTH + data_length + PROTOCOL_CRC_LENGTH;
 
             // Data id
@@ -51,7 +51,18 @@ class JitPacket: public JitInterface {
             
             return cobs_length;
         };
+        
+        // This virtual method is used in python to return the
+        // length of the value manually. This is requred because
+        // the python wrapper can not determine the size of the 
+        // variable in python. In C++ the length of the variable
+        // must be passed, then it will return the same value. In
+        // this way the compatibility is guaranteed.
 
+        virtual uint32_t setLength(uint32_t length){
+
+            return length;
+        }
 
         uint32_t encodePacket(uint8_t* buffer, uint32_t buffer_length){
 
