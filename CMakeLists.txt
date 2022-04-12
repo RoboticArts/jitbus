@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(jitbus)
 
+option(BUILD_ROS_EXAMPLES "Build ROS examples" OFF)
+option(BUILD_GCC_EXAMPLES "Build GCC examples" OFF)
+
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     std_msgs
@@ -36,3 +39,35 @@ install(
   DIRECTORY src/core/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
+
+# Build examples
+if(BUILD_ROS_EXAMPLES)
+
+  include_directories(
+    src
+  )
+
+  add_library(${PROJECT_NAME}_ros
+    examples/linux/serial_example_ros.cpp
+  )
+
+  add_executable(serial_example_ros examples/linux/serial_example_ros.cpp)
+  target_link_libraries(serial_example_ros ${catkin_LIBRARIES})
+
+endif()
+
+
+if(BUILD_GCC_EXAMPLES)
+
+  include_directories(
+    src
+  )
+
+  add_library(${PROJECT_NAME}_gcc
+    examples/linux/serial_example_gcc.cpp
+  )
+
+  add_executable(serial_example_gcc examples/linux/serial_example_gcc.cpp)
+  target_link_libraries(serial_example_gcc ${catkin_LIBRARIES})
+
+endif()
