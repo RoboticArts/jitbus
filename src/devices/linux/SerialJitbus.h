@@ -171,48 +171,51 @@ class SerialJitbus: public Jitcore {
 
 	uint32_t available_read(){
 
-        if (serial.available() >= 63){ // 64 bytes buffer
-            
-            print_warn("SerialJitbus::available_bytes -> Serial RX buffer is full, "
-                        "execution frequency is too low or sender is too fast. Next "
-                        "bytes could be lost");
-            
-        }
+		if (connected()){
 
-        if (cbuffer->size() >= JITBUS_BUFFER_SIZE){ 
-            
-            print_warn("SerialJitbus::available_bytes -> Serial RX circular buffer is "
-                       "full, execution frequency is toolow or sender is too fast. Next "
-                       "bytes could be lost");
-            
-        }
-        
-        while(serial.available() > 0){
-
-        	if (connected()){
-
-				try{
-
-					cbuffer->push(serial.read().c_str()[0]);
-					
-				}
-
-				catch(serial::IOException& e){
-			
-					print_error("jitbus::read -> %s",e.what());
-					switchState(DISCONNECTED);
-				}
-				catch(serial::PortNotOpenedException& e){
-					print_error("jitbus::read -> %s",e.what());
-					switchState(DISCONNECTED);
-				}
-				catch (serial::SerialException& e){
-					print_error("jitbus::read -> %s",e.what());
-					switchState(DISCONNECTED);
-				}
-
+			if (serial.available() >= 63){ // 64 bytes buffer
+				
+				print_warn("SerialJitbus::available_bytes -> Serial RX buffer is full, "
+							"execution frequency is too low or sender is too fast. Next "
+							"bytes could be lost");
+				
 			}
-        }
+
+			if (cbuffer->size() >= JITBUS_BUFFER_SIZE){ 
+				
+				print_warn("SerialJitbus::available_bytes -> Serial RX circular buffer is "
+						"full, execution frequency is too low or sender is too fast. Next "
+						"bytes could be lost");
+				
+			}
+			
+			while(serial.available() > 0){
+
+				if (connected()){
+
+					try{
+
+						cbuffer->push(serial.read().c_str()[0]);
+						
+					}
+
+					catch(serial::IOException& e){
+				
+						print_error("jitbus::read -> %s",e.what());
+						switchState(DISCONNECTED);
+					}
+					catch(serial::PortNotOpenedException& e){
+						print_error("jitbus::read -> %s",e.what());
+						switchState(DISCONNECTED);
+					}
+					catch (serial::SerialException& e){
+						print_error("jitbus::read -> %s",e.what());
+						switchState(DISCONNECTED);
+					}
+
+				}
+			}
+		}
 
         uint32_t available_data = cbuffer->size(); 
         
