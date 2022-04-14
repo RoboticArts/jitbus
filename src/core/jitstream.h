@@ -158,89 +158,83 @@ class JitStream: public JitPacket{
     template<typename Type>
     bool writePacket(const Type& data, uint16_t data_id){
 
-        bool ready = false;
+        bool is_packet_sent = false;
+        // print_info("state %d", state_write);
+        if (state_write == NEW_PACKET){
 
-        do{
-
-            switch(state_write){
-
-                case WR_NEW_PACKET:
-
-                    if(buildNewPacket(data, data_id) == true){
-                    
-                        state_write = WR_SEND_START_FRAME;
-                    }
-                    else{
-
-                        state_write = WR_NEW_PACKET;
-                    }
-
-                    break;
-
-                case WR_SEND_START_FRAME:  // Remove <-------------------------------------
-                    
-                    if (write(JitPacket::startFrame()) == true){
-
-                        state_write = WR_SEND_PACKET_BYTES; 
-
-                    }   
-                    else{
-                        
-                        state_write = WR_SEND_START_FRAME;
-                    }
-
-                    break;
-
-                case WR_SEND_PACKET_BYTES:
-
-                    if (writeThisPacket() == true){
-                    
-                        state_write = WR_SEND_END_FRAME;
-                    }
-                    else{
-
-                        state_write = WR_WAIT_AVAILABLE_BYTES;
-                    }
-
-                    break;
-
-                case WR_SEND_END_FRAME:   // Remove <---------------------------------------
-
-                    if (write(JitPacket::endFrame()) == true){
-
-                        state_write = WR_NEW_PACKET;
-
-                    }
-
-                    else{
-                        state_write = WR_SEND_END_FRAME;
-                    } 
-
-                    break;
-
-                case WR_WAIT_AVAILABLE_BYTES:
-
-                    if (isWrittenBytesAvailable() == true){
-
-                        state_write = WR_SEND_PACKET_BYTES;
-                    }
-                    else{
-
-                        state_write = WR_WAIT_AVAILABLE_BYTES;
-                    }
-
-                    break;
-            };
-
-        } while (state_write != WR_WAIT_AVAILABLE_BYTES && state_write != WR_NEW_PACKET &&
-                 state_write != WR_SEND_START_FRAME && state_write != WR_SEND_END_FRAME);  // Remove <--------------
-
-        if (state_write == WR_NEW_PACKET){
-
-            ready = true;
+            switchWriteState(BUILD_DATA_FRAME);
         }
 
-        return ready;
+        if (state_write == BUILD_DATA_FRAME){
+
+            if(buildNewPacket(data, data_id) == true){
+                
+                switchWriteState(WRITE_START_FRAME);
+            }
+            else{
+
+                switchWriteState(NEW_PACKET);
+            }
+        }
+
+        if (state_write == WRITE_START_FRAME){
+
+            if (write(JitPacket::startFrame()) == true){
+                
+                switchWriteState(WRITE_DATA_FRAME);
+
+            }   
+            else{
+
+                state_write = WAIT_BYTES;
+            }
+        }
+
+        if (state_write == WRITE_DATA_FRAME){
+
+            if (writeThisPacket() == true){
+
+                switchWriteState(WRITE_END_FRAME);
+            }
+            else{
+
+                switchWriteState(WAIT_BYTES);
+            }
+        }
+
+        if (state_write == WRITE_END_FRAME){
+            
+            if (write(JitPacket::endFrame()) == true){
+
+                switchWriteState(COMPLETE_PACKET);
+            }
+
+            else{
+
+                switchWriteState(WAIT_BYTES);
+            }
+        }
+
+        if (state_write == COMPLETE_PACKET){
+
+            is_packet_sent = true;
+            switchWriteState(NEW_PACKET);
+        }
+
+        if (state_write == WAIT_BYTES){
+            
+            if (isWrittenBytesAvailable() == true){
+
+                switchWriteState(last_state_write);
+            }
+            else{
+
+                switchWriteState(WAIT_BYTES);
+            }
+
+        }
+
+        return is_packet_sent;
     }
 
 
@@ -455,8 +449,11 @@ class JitStream: public JitPacket{
     uint8_t buffer_write[JITBUS_BUFFER_SIZE];
     uint32_t buffer_write_size;
     uint32_t index_written = 0;
-    enum state_write_enum {WR_NEW_PACKET, WR_SEND_START_FRAME, WR_SEND_PACKET_BYTES, WR_SEND_END_FRAME, WR_WAIT_AVAILABLE_BYTES};
-    int state_write = WR_NEW_PACKET;
+    enum state_write_enum {NEW_PACKET, BUILD_DATA_FRAME, WRITE_START_FRAME, WRITE_DATA_FRAME, WRITE_END_FRAME, WAIT_BYTES, COMPLETE_PACKET};
+    int state_write = NEW_PACKET;
+    int last_state_write = NEW_PACKET;
+    bool write_busy = false;
+    uint16_t write_id = 0;
 
     template<typename Type>
     bool buildNewPacket(const Type& data, uint16_t data_id){
@@ -530,6 +527,15 @@ class JitStream: public JitPacket{
 
         return available_bytes_to_write;
     }
+
+    void switchWriteState(int state){
+
+		if (state != state_write){
+			last_state_write = state_write;
+			state_write = state;
+		}
+
+	}
 
 
     // ------------------------------------------------------------------------------- // 
