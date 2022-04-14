@@ -241,12 +241,25 @@ class JitStream: public JitPacket{
     template<typename Type>
     void writePacketHz(const Type& data, uint16_t data_id, uint32_t& time, float frequency){
 
+        // Write the packet at the indicated frequency. It will enter
+        // until the package is sent
+
         if (time_ms() - time >= 1000/frequency){
             
-            if (writePacket(data, data_id) == true){
-                time = time_ms();
+            // Check if a packet is being written. In that case, only the
+            // packet with the ID that is being written will enter. Otherwise,
+            // the first packet to arrive will get the resource.
+
+            if (write_busy == false || data_id == write_id){
+
+                write_busy = true;
+                write_id = data_id;
+
+                if (writePacket(data, data_id) == true){
+                    time = time_ms();
+                    write_busy = false;
+                }
             }
-           
         }
     }
 
