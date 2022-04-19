@@ -136,6 +136,11 @@ class SerialJitbus: public Jitcore {
         return millis();
     }
 
+    virtual uint32_t time_us(){
+
+        return micros();
+    }
+
   private:
 
     Stream* serial;

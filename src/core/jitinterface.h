@@ -34,6 +34,11 @@ class JitInterface: public Jitlog {
       return 0;
     }
 
+    virtual uint32_t time_us(){
+
+      return 0;
+    }
+
   private:
 
 };

@@ -238,10 +238,19 @@ class SerialJitbus: public Jitcore {
 
     uint32_t time_ms(){
 
-		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-		uint32_t time_now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
+		std::chrono::steady_clock::time_point time_end = std::chrono::steady_clock::now();
+		uint32_t time_now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_end-time_begin).count();
 
 		return time_now_ms;
+    }
+
+
+    uint32_t time_us(){
+
+		std::chrono::steady_clock::time_point time_end = std::chrono::steady_clock::now();
+		uint32_t time_now_us = std::chrono::duration_cast<std::chrono::microseconds>(time_end-time_begin).count();
+
+		return time_now_us;
     }
 
   private:
@@ -261,7 +270,7 @@ class SerialJitbus: public Jitcore {
 
 	time_t current_time, last_time;
 
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point time_begin = std::chrono::steady_clock::now();
 
 	void switchState(int state){
 
