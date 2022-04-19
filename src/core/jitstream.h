@@ -239,30 +239,88 @@ class JitStream: public JitPacket{
 
 
     template<typename Type>
-    void writePacketHz(const Type& data, uint16_t data_id, uint32_t& time, float frequency){
+    bool writePacketHz(const Type& data, uint16_t data_id, uint32_t& time, float frequency){
 
-        // Write the packet at the indicated frequency. It will enter
-        // until the package is sent
+        bool is_packet_hz_sent = false;
+        const uint32_t period_us = 1e6/frequency;
 
-        if (time_ms() - time >= 1000/frequency){
-            
-            // Check if a packet is being written. In that case, only the
-            // packet with the ID that is being written will enter. Otherwise,
-            // the first packet to arrive will get the resource.
+        // Update time in the first boot
+        if (time == 0){
+            time = time_us();
+        }
 
-            if (write_busy == false || data_id == write_id){
+        if (state_write_hz == READY_PACKET){
 
-                write_busy = true;
-                write_id = data_id;
+            if (time_us() - time >= period_us){
 
-                if (writePacket(data, data_id) == true){
-                    time = time_ms();
-                    write_busy = false;
-                }
+                checkWritingFrequency(data_id, time, frequency);
+                time = time_us();
+                write_resource_owner = data_id;
+                switchWriteHzState(BUSY_PACKET);
+            }
+            else{
+
+                switchWriteHzState(READY_PACKET);
             }
         }
+
+        if (state_write_hz == BUSY_PACKET){
+
+            if (write_resource_owner == data_id){
+
+                if (writePacket(data, data_id) == true){
+                    
+                    switchWriteHzState(FINISH_PACKET);
+                }
+                else{
+
+                    switchWriteHzState(BUSY_PACKET);
+                }
+            }
+            else{
+
+                switchWriteHzState(BUSY_PACKET);
+            }
+        }
+
+        if(state_write_hz == FINISH_PACKET){
+
+            is_packet_hz_sent = true;
+            switchWriteHzState(READY_PACKET);
+        }
+        
+        return is_packet_hz_sent;
     }
 
+    bool checkWritingFrequency(uint16_t data_id, uint32_t& time, float frequency){
+
+        bool success = false;
+
+        uint32_t elapsed_time_us = time_us() - time;
+        const uint32_t period_us = 1e6/frequency;
+        const uint32_t max_real_time_period_us = 2*period_us;
+        
+        if (elapsed_time_us >= 2*period_us){
+
+            success = false;
+            print_warn("jitstream::checkWritingFrequency -> Packet with ID %d should have started "
+                        "%.3f ms ago, but the maximum allowed is %.3f ms", data_id, 
+                        (elapsed_time_us)/1e3, max_real_time_period_us/1e3);
+        }
+        
+        else if (elapsed_time_us > period_us*1.1  || elapsed_time_us < period_us*0.9){
+
+            success = false;
+            print_warn("jitstream::checkWritingFrequency -> Packet with ID %d should work at "
+                        "%.1f hz, but is working at %.1f hz", data_id, frequency, 1e6/elapsed_time_us); 
+        }
+
+        else{
+            success = true;
+        }
+
+        return success;
+    }
 
     template<typename Type>
     void writePacketBlocking(const Type& data, uint16_t data_id){
@@ -465,8 +523,10 @@ class JitStream: public JitPacket{
     enum state_write_enum {NEW_PACKET, BUILD_DATA_FRAME, WRITE_START_FRAME, WRITE_DATA_FRAME, WRITE_END_FRAME, WAIT_BYTES, COMPLETE_PACKET};
     int state_write = NEW_PACKET;
     int last_state_write = NEW_PACKET;
-    bool write_busy = false;
-    uint16_t write_id = 0;
+    enum state_write_hz_enum {READY_PACKET, BUSY_PACKET, FINISH_PACKET};
+    uint16_t write_resource_owner = 0;
+    int state_write_hz = READY_PACKET;
+    int last_state_write_hz = READY_PACKET;
 
     template<typename Type>
     bool buildNewPacket(const Type& data, uint16_t data_id){
@@ -546,6 +606,15 @@ class JitStream: public JitPacket{
 		if (state != state_write){
 			last_state_write = state_write;
 			state_write = state;
+		}
+
+	}
+
+    void switchWriteHzState(int state){
+
+		if (state != state_write_hz){
+			last_state_write_hz = state_write_hz;
+			state_write_hz = state;
 		}
 
 	}

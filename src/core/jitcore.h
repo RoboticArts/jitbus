@@ -42,10 +42,9 @@ class Jitcore: public JitStream{
     }
 
     template<typename Type>
-    void sendPacketHz(const Type& data, uint16_t data_id, uint32_t& time, float frequency){
+    bool sendPacketHz(const Type& data, uint16_t data_id, uint32_t& time, float frequency){
 
-        JitStream::writePacketHz(data, data_id, time, frequency);
-
+        return JitStream::writePacketHz(data, data_id, time, frequency);
     }
 
     template<typename Type>
