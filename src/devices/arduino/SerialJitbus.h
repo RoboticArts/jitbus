@@ -141,6 +141,16 @@ class SerialJitbus: public Jitcore {
         return micros();
     }
 
+	void delay_ms(uint32_t wait_ms){
+
+		delay(wait_ms);
+	}
+
+	void delay_us(uint32_t wait_us){
+
+        delayMicroseconds(wait_us);
+	}
+
   private:
 
     Stream* serial;

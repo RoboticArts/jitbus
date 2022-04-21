@@ -39,6 +39,14 @@ class JitInterface: public Jitlog {
       return 0;
     }
 
+    virtual void delay_ms(uint32_t wait_ms){
+
+    };
+
+    virtual void delay_us(uint32_t wait_us){
+
+    };
+
   private:
 
 };

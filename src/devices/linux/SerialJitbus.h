@@ -4,6 +4,7 @@
 #define JITLOG_SIZE 1000
 
 #include <chrono>
+#include <thread>
 #include <time.h>
 #include "serial/serial.h"
 #include "core/jitcore.h"
@@ -252,6 +253,16 @@ class SerialJitbus: public Jitcore {
 
 		return time_now_us;
     }
+
+	void delay_ms(uint32_t wait_ms){
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(wait_ms));
+	}
+
+	void delay_us(uint32_t wait_us){
+
+		std::this_thread::sleep_for(std::chrono::microseconds(wait_us));
+	}
 
   private:
 
