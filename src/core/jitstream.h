@@ -6,9 +6,12 @@
 // crc: CRC CCIT_ZERO
 // cobs: Remove auxiliar buffer for cobs, package will be built with enough spaces, add start and end frame. Keep length warning
 // jitstream: Fix attempts when start data is not received after X attempts
-// jitstream: add bool inside the write function to know if data is sent
+// jitstream: add bool inside the write function to know if data is sent ---
 // jitstream: improve bool inside the read function, rename types
 // jitstream: test and update sendPacketBlocking
+// jitstream: add timeout for sendPacketBlocking
+// jitstream: manage writePacket, writePacketHz, writePacketBlocking collision
+// jitstream: create writePacketOnce, it contain writePacket. writePacket will return the state of the FSM
 // jitstream: Add clear packet function when packet is not consumed, it will cause packet block
 // jitstream: increase precision time to publish to more than 500 hz. Add overflow counter
 // linux/SerialJitbus: add virtual time function to be overloaded on ros programs
@@ -323,27 +326,52 @@ class JitStream: public JitPacket{
     }
 
     template<typename Type>
-    void writePacketBlocking(const Type& data, uint16_t data_id){
+    bool writePacketBlocking(const Type& data, uint16_t data_id, uint32_t timeout){
 
-        //It finishes sending the last package if it was sending
+        bool is_packet_blocking_sent = true;
+        uint32_t last_time_blocking = time_ms();
+        bool timeout_enabled = false;
+
+        if (timeout > 0){
+            timeout_enabled = true;
+        }
+        else{
+            timeout_enabled = false;
+        }
+
+        // Wait for the last packet to be sent completely
+        // To do: add an internal variable inside of writePacket FSM to know if a packet is being sent.
+        // To do: manage index_written when timeout expires
         if (index_written > 0){
-            
-            while (index_written > 0){
 
-                writePacket(data, data_id);
-            
+            while (writePacket(data, data_id) == false){
+
+                delay_us(1);
+
+                if(time_ms() - last_time_blocking > timeout && timeout_enabled == true){
+
+                    print_info("jitstream::writePacketBlocking -> Packet ID %d: Timeout of %d ms expired", data_id, timeout);
+                    is_packet_blocking_sent = false;
+                    break;
+                }
             }
         }
 
-        // Send the new packet
-        writePacket(data, data_id);
-
         // Wait for the new package to be sent
-        while (index_written > 0){
-         
-            writePacket(data, data_id);
+        while (writePacket(data, data_id) == false){
+
+            delay_us(1);
+
+            if(time_ms() - last_time_blocking > timeout && timeout_enabled == true){
+
+                print_info("jitstream::writePacketBlocking -> Packet ID %d: Timeout of %d ms expired", data_id, timeout);
+                is_packet_blocking_sent = false;
+                break;
+            }
+
         }
 
+        return is_packet_blocking_sent;
     }
 
   private: 

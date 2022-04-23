@@ -48,9 +48,9 @@ class Jitcore: public JitStream{
     }
 
     template<typename Type>
-    void sendPacketBlocking(const Type& data, uint16_t data_id){
+    bool sendPacketBlocking(const Type& data, uint16_t data_id, uint32_t timeout = 0){
 
-        JitStream::writePacketBlocking(data, data_id);
+        return JitStream::writePacketBlocking(data, data_id, timeout);
     }
 
 
