@@ -242,6 +242,13 @@ class JitStream: public JitPacket{
 
 
     template<typename Type>
+    bool writePacketOnce(const Type& data, uint16_t data_id){
+
+        return writePacket(data, data_id);
+    }
+
+
+    template<typename Type>
     bool writePacketHz(const Type& data, uint16_t data_id, uint32_t& time, float frequency){
 
         bool is_packet_hz_sent = false;

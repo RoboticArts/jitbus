@@ -35,10 +35,9 @@ class Jitcore: public JitStream{
     }
 
     template<typename Type>
-    void sendPacket(const Type& data, uint16_t data_id){
+    bool sendPacket(const Type& data, uint16_t data_id){
 
-        JitStream::writePacket(data, data_id);
-
+        return JitStream::writePacketOnce(data, data_id);
     }
 
     template<typename Type>
