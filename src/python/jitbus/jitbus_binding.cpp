@@ -25,10 +25,10 @@ class JitbusBinding: public Jitcore {
         return available();
     }
 
- 	void sendPacket_py(const char &data, uint8_t data_length, uint16_t data_id){
+ 	bool sendPacket_py(const char &data, uint8_t data_length, uint16_t data_id){
 
 		custom_data_length = data_length;
-		sendPacket(data, data_id);
+		return sendPacket(data, data_id);
 	}
 
 	bool receivePacket_py(const char &data, uint16_t data_id){
@@ -36,17 +36,17 @@ class JitbusBinding: public Jitcore {
 		return receivePacket(data, data_id);
 	}
 
-	void sendPacketBlocking_py(const char &data, uint8_t data_length, uint16_t data_id){
+	bool sendPacketBlocking_py(const char &data, uint8_t data_length, uint16_t data_id, uint32_t timeout){
 
 		custom_data_length = data_length;
-        writePacketBlocking(data, data_id);
+		return sendPacketBlocking(data, data_id, timeout);
     }
 
-	uint32_t sendPacketHz_py(const char &data, uint8_t data_length, uint16_t data_id, uint32_t time, float frequency){
+	boost::python::tuple sendPacketHz_py(const char &data, uint8_t data_length, uint16_t data_id, uint32_t time, float frequency){
 
 		custom_data_length = data_length;
-        sendPacketHz(data, data_id, time, frequency);
-		return time;
+        bool is_sent = sendPacketHz(data, data_id, time, frequency);
+		return boost::python::make_tuple(time, is_sent);
     }
 
 	void print_debug_py(std::string message){
@@ -193,6 +193,29 @@ struct JitbusBindingWrap : JitbusBinding, wrapper<JitbusBinding>
 
     }
 
+	uint32_t time_us() override
+    {
+
+        if (override f = this->get_override("time_us"))
+        {
+			return this->get_override("time_us")();
+        }
+        else
+        {
+			return JitbusBinding::time_us();
+        }
+
+    }
+
+	void delay_ms(uint32_t wait_ms) override
+	{
+
+	}
+
+	void delay_us(uint32_t wait_us) override
+	{
+
+	}
 
 	void print_log(const char* message) override
     {
@@ -219,6 +242,9 @@ BOOST_PYTHON_MODULE(_jitbus_binding_so)
 		.def("available_read", &JitbusBinding::available_read)
 		.def("available_write", &JitbusBinding::available_write)
 		.def("time_ms", &JitbusBinding::time_ms)
+		.def("time_us", &JitbusBinding::time_us)
+		.def("delay_ms", &JitbusBinding::delay_ms)
+		.def("delay_us", &JitbusBinding::delay_us)
 		.def("print_log", &JitbusBinding::print_log)
 		.def("print_debug_py", &JitbusBinding::print_debug_py)
 		.def("print_info_py", &JitbusBinding::print_info_py)

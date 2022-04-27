@@ -13,11 +13,10 @@ class Jitcore(JitbusBinding):
         self.FATAL_ERROR = 0
 
     def available(self):
- 
         return self.available_py()
 
     def sendPacket(self, data, data_id):
-        self.sendPacket_py(self.pack(data), sizeof(data), data_id)
+        return self.sendPacket_py(self.pack(data), sizeof(data), data_id)
 
     def receivePacket(self, data_type, data_id):
         aux = 'n' * sizeof(data_type)
@@ -25,11 +24,12 @@ class Jitcore(JitbusBinding):
         data = self.unpack(data_type, aux)
         return success, data
 
-    def sendPacketBlocking(self, data, data_id):
-        self.sendPacketBlocking_py(self.pack(data), sizeof(data), data_id)
+    def sendPacketBlocking(self, data, data_id, timeout = 0):
+        return self.sendPacketBlocking_py(self.pack(data), sizeof(data), data_id, timeout)
 
     def sendPacketHz(self, data, data_id, time_list, frequency):
-        time_list[0] = self.sendPacketHz_py(self.pack(data), sizeof(data), data_id, time_list[0], frequency)
+        time_list[0], is_sent = self.sendPacketHz_py(self.pack(data), sizeof(data), data_id, time_list[0], frequency)
+        return is_sent
 
     def pack(self, ctype_instance):
         buf = string_at(byref(ctype_instance), sizeof(ctype_instance))

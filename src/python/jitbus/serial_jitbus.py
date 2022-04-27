@@ -12,7 +12,7 @@ class SerialJitbus(Jitcore):
     def __init__(self):
         
         Jitcore.__init__(self) 
-        self.start_time = round(time.time() * 1000)
+        self.start_time = time.time()
         self.CONNECTED = 0
         self.DISCONNECTED = 1
         
@@ -183,10 +183,26 @@ class SerialJitbus(Jitcore):
         return virutal_serial_size
     
     def time_ms(self):
-        current_time = round(time.time() * 1000) 
-        elapsed_time_since_start = int(current_time - self.start_time)
-        return elapsed_time_since_start
+
+        elapsed_time_since_start_ms = int(round((time.time() - self.start_time)*1e3))
+
+        return elapsed_time_since_start_ms
+
+    def time_us(self):
+
+        elapsed_time_since_start_us = int(round((time.time() - self.start_time)*1e6))
+
+        return elapsed_time_since_start_us
+
+    def delay_ms(self, wait_ms):
+
+        time.sleep(wait_ms*1e-3)
+
+    def delay_us(self, wait_us):
+
+        time.sleep(wait_us*1e-6)
 
     def print_log(self, message):
+
         sys.stdout.write(message)
 
