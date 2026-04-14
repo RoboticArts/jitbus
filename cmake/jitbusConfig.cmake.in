@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(PkgConfig)
+include(FindPkgConfig)
+pkg_check_modules(SERIAL REQUIRED IMPORTED_TARGET libserial)
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/jitbusTargets.cmake")
+check_required_components(jitbus)

@@ -1,5 +1,5 @@
 #ifdef __linux__
-    #include "devices/linux/SerialJitbus.h"
+    #include "platforms/linux/SerialJitbus.h"
 #else
-    #include "devices/arduino/SerialJitbus.h"  
+    #include "platforms/arduino/SerialJitbus.h"  
 #endif
