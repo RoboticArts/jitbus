@@ -7,7 +7,6 @@
 #include <thread>
 #include <time.h>
 #include <iostream> 
-// #include "serial/serial.h"
 #include <libserial/SerialPort.h>
 #include "core/jitcore.h"
 
@@ -31,42 +30,42 @@ class SerialJitbus: public Jitcore {
 		  disconnect();
     }
 
-    void init(const char* serial_port, int baudrate, int timeout = 50, int reconnection_time = 2)
+    bool init(const char* serial_port, int baudrate, int timeout = 0, int reconnection_time = 2)
     {
-      this->serial_port = serial_port;
-      this->baudrate = baudrate;
-      this->timeout = timeout;
-      this->reconnection_time = reconnection_time; 
-		  connect();
+      serial_port_ = serial_port;
+      baudrate_ = baudrate;
+      timeout_ = timeout;
+      reconnection_time_ = reconnection_time; 
+		  
+      return connect();
 	  }
-
 
     bool connect()
     {
-      bool success;
-
       try
       {
         serial = std::make_shared<LibSerial::SerialPort>();
 
-        serial->Open(serial_port);
-        serial->SetBaudRate(LibSerial::BaudRate::BAUD_115200);
+        serial->Open(serial_port_);
+        serial->SetBaudRate(getBaudRateEnum(baudrate_));
 
-
-        
-        print_info("jitbus::connect -> Serial port %s opened", serial_port);
+        print_info("jitbus::connect -> Serial port %s opened", serial_port_);
 
         switchState(CONNECTED);
-        success = true;
+        return true;
 		  }
       catch(const LibSerial::OpenFailed& e)
       {
-        print_error("ERROR: jitbus::connect -> Unable to open port %s", serial_port);
+        print_error("jitbus::connect -> Unable to open port: %s", serial_port_);
         switchState(DISCONNECTED);
-        success = false;
 		  }
+      catch (const std::exception& e)
+      {
+        print_error("jitbus::connect -> std::exception: %s", e.what());
+        switchState(DISCONNECTED);
+      }
 
-      return success;
+      return false;
     }
 
     void disconnect()
@@ -77,7 +76,7 @@ class SerialJitbus: public Jitcore {
 
     bool connected()
     {
-      bool is_connected;
+      bool is_connected = false;
 
       if (current_state == CONNECTED)
       {
@@ -88,7 +87,7 @@ class SerialJitbus: public Jitcore {
       {
         time(&current_time);
         
-        if (difftime(current_time, last_time) >= reconnection_time)
+        if (difftime(current_time, last_time) >= reconnection_time_)
         {
           is_connected = connect();
           time(&last_time);
@@ -105,51 +104,29 @@ class SerialJitbus: public Jitcore {
 
     bool write(uint8_t data)
     {
-      bool success = false;
-
       if (connected())
       {
         try
         {
-          //LibSerial::DataBuffer data_buffer{data};
           serial->WriteByte(data);
-          size_t bytes_written = 10; //serial.write(&data,1);
-          success = true;
-          
-          // if (bytes_written <= 0)
-          // {
-          //   success = false;
-          //   print_warn("jitbus::write -> Byte hex: %X not sent, I will try again", data);
-          // }
-          // else
-          // {
-          //   success = true;
-          // }
+
+          // If no exception is thrown, we assume the write was accepted
+          // by the OS (kernel buffer)
+          return true;
         }
-
-        // catch(serial::IOException& e){
-      
-        // 	print_error("jitbus::write -> %s",e.what());
-        // 	switchState(DISCONNECTED);
-        // }
-        // catch(serial::PortNotOpenedException& e){
-        // 	print_error("jitbus::write -> %s",e.what());
-        // 	switchState(DISCONNECTED);
-        // }
-        // catch (serial::SerialException& e){
-        // 	print_error("jitbus::write -> %s",e.what());
-        // 	switchState(DISCONNECTED);
-        // }
-
-        catch(...)
+        catch (const LibSerial::NotOpen& e)
         {
-
+          print_error("jitbus::write -> Port not open: %s", serial_port_);
+          switchState(DISCONNECTED);
         }
+        catch (const std::exception& e)
+        {
+          print_error("jitbus::write -> std::exception: %s", e.what());
+          switchState(DISCONNECTED);
+        }
+		  }
 
-		}
-
-		return success; 
-
+		  return false; 
     }
 
     uint32_t available_write()
@@ -183,27 +160,19 @@ class SerialJitbus: public Jitcore {
             try
             {
               uint8_t read_byte;
-              serial->ReadByte(read_byte);
+              serial->ReadByte(read_byte, timeout_);
               cbuffer->push(read_byte);
             }
-          catch (const std::exception& e)
-          {
-              std::cerr << "std::exception: " << e.what() << std::endl;
-          }
-            // catch(serial::IOException& e){
-          
-            // 	print_error("jitbus::read -> %s",e.what());
-            // 	switchState(DISCONNECTED);
-            // }
-            // catch(serial::PortNotOpenedException& e){
-            // 	print_error("jitbus::read -> %s",e.what());
-            // 	switchState(DISCONNECTED);
-            // }
-            // catch (serial::SerialException& e){
-            // 	print_error("jitbus::read -> %s",e.what());
-            // 	switchState(DISCONNECTED);
-            // }
-
+            catch(const LibSerial::NotOpen& e)
+            {
+                print_error("jitbus::read -> Port not open: %s", e.what());
+                switchState(DISCONNECTED);
+            }
+            catch(const std::exception& e)
+            {
+                print_error("jitbus::read -> std::exception: %s", e.what());
+                switchState(DISCONNECTED);
+            }
           }
         }
         
@@ -250,6 +219,30 @@ class SerialJitbus: public Jitcore {
 		std::this_thread::sleep_for(std::chrono::microseconds(wait_us));
 	}
 
+  LibSerial::BaudRate getBaudRateEnum(int baudrate) 
+  {
+    switch (baudrate) 
+    {
+        case 110: return LibSerial::BaudRate::BAUD_110;
+        case 300: return LibSerial::BaudRate::BAUD_300;
+        case 600: return LibSerial::BaudRate::BAUD_600;
+        case 1200: return LibSerial::BaudRate::BAUD_1200;
+        case 2400: return LibSerial::BaudRate::BAUD_2400;
+        case 4800: return LibSerial::BaudRate::BAUD_4800;
+        case 9600: return LibSerial::BaudRate::BAUD_9600;
+        case 19200: return LibSerial::BaudRate::BAUD_19200;
+        case 38400: return LibSerial::BaudRate::BAUD_38400;
+        case 57600: return LibSerial::BaudRate::BAUD_57600;
+        case 115200: return LibSerial::BaudRate::BAUD_115200;
+        case 230400: return LibSerial::BaudRate::BAUD_230400;
+        case 460800: return LibSerial::BaudRate::BAUD_460800;
+        case 921600: return LibSerial::BaudRate::BAUD_921600;
+        default:
+            std::cerr << "Baudrate " << baudrate << " is not supported. Exit program." << std::endl;
+            std::exit(EXIT_FAILURE);
+    }
+  }
+
   private:
 
     CircularBuffer<uint8_t>* cbuffer;
@@ -260,10 +253,10 @@ class SerialJitbus: public Jitcore {
 
     std::shared_ptr<LibSerial::SerialPort> serial;
 
-    const char* serial_port;
-    int baudrate;
-    int timeout;
-    int reconnection_time;
+    const char* serial_port_;
+    int baudrate_;
+    int timeout_;
+    int reconnection_time_;
 
     time_t current_time, last_time;
 
