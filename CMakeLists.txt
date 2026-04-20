@@ -83,13 +83,12 @@ install(
 option(BUILD_EXAMPLES "Build examples" ON)
 
 if(BUILD_EXAMPLES)
-  add_executable(serial_example
-    examples/linux/serial_example.cpp
-  )
 
-  target_link_libraries(serial_example
-    PRIVATE jitbus
-  )
+  foreach(name serial_example serial_loopback serial_read serial_write)
+    add_executable(${name} examples/linux/${name}.cpp)
+    target_link_libraries(${name} PRIVATE jitbus)
+  endforeach()
+
 endif()
 
 # cmake_minimum_required(VERSION 3.8)
