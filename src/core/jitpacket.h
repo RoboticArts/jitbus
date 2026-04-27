@@ -50,7 +50,7 @@ class JitPacket: public JitInterface {
             cobs_length = encodePacket(buffer, packet_length);
             
             return cobs_length;
-        };
+        }
         
         // This virtual method is used in python to return the
         // length of the value manually. This is requred because

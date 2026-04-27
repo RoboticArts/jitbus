@@ -1,7 +1,8 @@
 #include <stdio.h>
-#include "jitbus.h"
 #include <chrono>
 #include <time.h>
+#include <cstring>
+#include <jitbus.h>
 
 SerialJitbus jit;
 double last_time = 0;

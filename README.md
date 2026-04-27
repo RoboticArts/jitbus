@@ -19,3 +19,5 @@ Compile with GCC examples
 ```
 catkin build -DBUILD_GCC_EXAMPLES=ON
 ```
+
+sudo apt install libserial-dev
