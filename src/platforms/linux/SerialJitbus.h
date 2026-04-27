@@ -10,6 +10,9 @@
 #include <libserial/SerialPort.h>
 #include "core/jitcore.h"
 
+// TODO(robert): Minimal documentation
+// TODO(robert): Check reconnection
+
 class SerialJitbus: public Jitcore {
 
   public:
